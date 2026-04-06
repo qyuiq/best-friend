@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}{{ animal.name }} - Лучший друг{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Главная</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('animals.list_animals') }}">Наши питомцы</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ animal.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Левая колонка - фотографии -->
+        <div class="col-lg-6 mb-4">
+            {% if photos %}
+                {% if photos|length > 1 %}
+                <div id="animalCarousel" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-inner rounded">
+                        {% for photo in photos %}
+                        <div class="carousel-item {% if loop.first %}active{% endif %}">
+                            <img src="{{ url_for('static', filename=photo.photo_url) }}"
+                                 class="d-block w-100"
+                                 alt="{{ animal.name }}"
+                                 style="height: 400px; object-fit: cover;">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#animalCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#animalCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                </div>
+                <div class="row mt-2">
+                    {% for photo in photos %}
+                    <div class="col-3">
+                        <img src="{{ url_for('static', filename=photo.photo_url) }}"
+                             class="img-thumbnail {% if loop.first %}active-thumb{% endif %}"
+                             style="height: 80px; width: 100%; object-fit: cover; cursor: pointer;"
+                             onclick="$('#animalCarousel').carousel({{ loop.index0 }})">
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <img src="{{ url_for('static', filename=animal.photos[0].photo_url) }}"
+                     class="img-fluid rounded"
+                     alt="{{ animal.name }}"
+                     style="height: 400px; width: 100%; object-fit: cover;">
+                {% endif %}
+            {% else %}
+                <div class="bg-light rounded d-flex align-items-center justify-content-center"
+                     style="height: 400px;">
+                    <i class="bi bi-image text-muted" style="font-size: 5rem;"></i>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Правая колонка - информация -->
+        <div class="col-lg-6">
+            <h1 class="mb-3">{{ animal.name }}</h1>
+
+            <!-- Бейджики -->
+            <div class="mb-4">
+                {% if animal.for_children %}
+                <span class="badge bg-success me-2 mb-2">
+                    <i class="bi bi-emoji-smile"></i> Подходит для детей
+                </span>
+                {% endif %}
+
+                {% if animal.with_other_animals %}
+                <span class="badge bg-info me-2 mb-2">
+                    <i class="bi bi-heart"></i> Уживается с другими животными
+                </span>
+                {% endif %}
+
+                {% if animal.is_neutered %}
+                <span class="badge bg-warning me-2 mb-2">
+                    <i class="bi bi-shield-check"></i> Стерилизован(а)
+                </span>
+                {% endif %}
+
+                {% if animal.requires_house %}
+                <span class="badge bg-danger me-2 mb-2">
+                    <i class="bi bi-house"></i> Требует частный дом
+                </span>
+                {% endif %}
+            </div>
+
+            <!-- Основная информация -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Основная информация</h5>
+                    <table class="table table-borderless mb-0">
+                        <tr>
+                            <td style="width: 40%;"><strong>Вид:</strong></td>
+                            <td>{{ animal.species.name }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Порода:</strong></td>
+                            <td>{{ animal.breed.name if animal.breed else 'Не указана' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Пол:</strong></td>
+                            <td>{{ animal.gender.name }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Возраст:</strong></td>
+                            <td>
+                                {% if animal.age %}
+                                    {{ animal.age }} {{ 'год' if animal.age == 1 else 'года' if animal.age < 5 else 'лет' }}
+                                {% else %}
+                                    Не указан
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Размер:</strong></td>
+                            <td>{{ animal.size.name if animal.size else 'Не указан' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Цвет:</strong></td>
+                            <td>{{ animal.color.name if animal.color else 'Не указан' }}</td>
+                        </tr>
+                        {% if animal.species.has_hair and animal.hair_length %}
+                        <tr>
+                            <td><strong>Длина шерсти:</strong></td>
+                            <td>{{ animal.hair_length.name }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+
+            <!-- Описание -->
+            {% if animal.description %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">О питомце</h5>
+                    <p class="card-text">{{ animal.description }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Особые потребности -->
+            {% if animal.special_needs %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Особые потребности</h5>
+                    <p class="card-text">{{ animal.special_needs }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Кнопка для очереди -->
+            <div class="card">
+                <div class="card-body">
+                    {% if in_queue %}
+                        <div class="alert alert-info">
+                            <h5><i class="bi bi-check-circle"></i> Вы в очереди!</h5>
+                            <p class="mb-0">Ваша текущая позиция в очереди: <strong>{{ queue_position }}</strong></p>
+                        </div>
+                    {% elif current_user.is_authenticated %}
+                        <form method="POST" action="{{ url_for('animals.join_queue', animal_id=animal.id) }}">
+                            <button type="submit" class="btn btn-primary btn-lg w-100">
+                                <i class="bi bi-heart"></i> Встать в очередь на усыновление
+                            </button>
+                            <p class="text-muted mt-2 mb-0 text-center">
+                                <small>
+                                    <i class="bi bi-info-circle"></i>
+                                    Для подачи заявки необходимо заполнить анкету
+                                </small>
+                            </p>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <h5><i class="bi bi-exclamation-triangle"></i> Требуется авторизация</h5>
+                            <p>Чтобы встать в очередь на усыновление, пожалуйста:</p>
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
+                                    <i class="bi bi-box-arrow-in-right"></i> Войти
+                                </a>
+                                <a href="{{ url_for('auth.register') }}" class="btn btn-outline-primary">
+                                    <i class="bi bi-person-plus"></i> Зарегистрироваться
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.active-thumb {
+    border-color: #0d6efd !important;
+    border-width: 2px;
+}
+.carousel-control-prev, .carousel-control-next {
+    width: 5%;
+}
+</style>
+
+{% if photos and photos|length > 1 %}
+<script>
+$(document).ready(function() {
+    $('#animalCarousel').carousel();
+
+    // Обновляем активный thumbnail
+    $('#animalCarousel').on('slide.bs.carousel', function (e) {
+        var index = $(e.relatedTarget).index();
+        $('.img-thumbnail').removeClass('active-thumb');
+        $('.img-thumbnail').eq(index).addClass('active-thumb');
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

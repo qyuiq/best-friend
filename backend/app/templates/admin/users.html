@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Пользователи{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1><i class="bi bi-people"></i> Пользователи</h1>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Логин</th>
+                    <th>Роль</th>
+                    <th>Дата регистрации</th>
+                    <th>Анкета</th>
+                    <th>Активные заявки</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td>{{ user.username }}</td>
+                    <td>
+                        {% if user.is_admin() %}
+                            <span class="badge bg-danger">Админ</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Пользователь</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ user.created_at.strftime('%d.%m.%Y') }}</td>
+                    <td>
+                        {% if user.profile %}
+                            <span class="text-success">Заполнена</span>
+                        {% else %}
+                            <span class="text-muted">Не заполнена</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ user.queue_applications|selectattr('status', 'equalto', 'active')|list|length }}</td>
+                    <td>
+                        <a href="{{ url_for('admin.user_detail', user_id=user.id) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-info-circle"></i> Подробнее
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

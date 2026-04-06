@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Лучший друг - Приют для животных{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-4 mb-4">🐾 Лучший друг</h1>
+    <p class="lead mb-4">Найдите себе верного друга среди наших подопечных</p>
+
+    {% if not current_user.is_authenticated %}
+    <div class="row justify-content-center mb-5">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Начните прямо сейчас!</h5>
+                    <p class="card-text">Зарегистрируйтесь, чтобы получить возможность:</p>
+                    <ul class="text-start list-unstyled text-center">
+                        <li>Просматривать всех животных</li>
+                        <li>Заполнить анкету для усыновления</li>
+                        <li>Встать в очередь на понравившееся животное</li>
+                    </ul>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('auth.register') }}" class="btn btn-primary">
+                            <i class="bi bi-person-plus"></i> Зарегистрироваться
+                        </a>
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-box-arrow-in-right"></i> Войти
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-success">
+        <h4><i class="bi bi-check-circle"></i> Вы успешно вошли!</h4>
+        <p class="mb-0">Добро пожаловать, <strong>{{ current_user.username }}</strong>! Теперь вы можете:</p>
+        <ul class="list-unstyled">
+            <li>Заполнить <a href="{{ url_for('auth.profile') }}">анкету</a> для усыновления</li>
+            <li>Просмотреть <a href="{{ url_for('animals.list_animals') }}">животных</a> в приюте</li>
+            <li>Подать заявку на понравившееся животное</li>
+        </ul>
+    </div>
+    {% endif %}
+
+    <div class="row mt-5">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-heart text-danger" style="font-size: 3rem;"></i>
+                    <h4 class="card-title mt-3">Более 100 животных</h4>
+                    <p class="card-text">Наши подопечные ждут, когда вы заберете их домой</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-house-check text-success" style="font-size: 3rem;"></i>
+                    <h4 class="card-title mt-3">Проверка соответствия</h4>
+                    <p class="card-text">Мы помогаем подобрать животное, которое подходит именно вам</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-shield-check text-primary" style="font-size: 3rem;"></i>
+                    <h4 class="card-title mt-3">Безопасное усыновление</h4>
+                    <p class="card-text">Все животные здоровы, привиты и ждут любящих хозяев</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

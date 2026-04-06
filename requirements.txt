@@ -1,0 +1,12 @@
+Flask==2.3.3
+Flask-SQLAlchemy==3.1.1
+Flask-Login==0.6.2
+Flask-WTF==1.1.1
+Werkzeug==2.3.7
+Pillow
+python-dotenv==1.0.0
+email-validator
+pytest>=7.0
+allpairspy>=2.5
+flasgger
+PyYAML

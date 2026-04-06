@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Админ-панель{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1><i class="bi bi-shield-lock"></i> Админ-панель</h1>
+    
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Животные</h5>
+                    <p class="card-text display-6">{{ total_animals }}</p>
+                    <p>Доступно: {{ available_animals }}</p>
+                    <a href="{{ url_for('admin.manage_animals') }}" class="btn btn-light btn-sm">Управлять</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Пользователи</h5>
+                    <p class="card-text display-6">{{ total_users }}</p>
+                    <a href="{{ url_for('admin.manage_users') }}" class="btn btn-light btn-sm">Список</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

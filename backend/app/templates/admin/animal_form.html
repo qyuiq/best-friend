@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('admin.index') }}">Админ-панель</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('admin.manage_animals') }}">Животные</a></li>
+            <li class="breadcrumb-item active">{{ title }}</li>
+        </ol>
+    </nav>
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">{{ title }}</h3>
+        </div>
+        <div class="card-body">
+
+            <form method="POST" action="" enctype="multipart/form-data">
+                {{ form.hidden_tag() }}
+
+                <!-- Основная информация -->
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.name.label(class="form-label") }}
+                        {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+                        {% for error in form.name.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.species_id.label(class="form-label") }}
+                        {{ form.species_id(class="form-select" + (" is-invalid" if form.species_id.errors else ""), id="species_select") }}
+                        {% for error in form.species_id.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.breed_id.label(class="form-label") }}
+                        {{ form.breed_id(class="form-select" + (" is-invalid" if form.breed_id.errors else ""), id="breed_select") }}
+                        {% for error in form.breed_id.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.age.label(class="form-label") }}
+                        {{ form.age(class="form-control" + (" is-invalid" if form.age.errors else ""), placeholder="в годах") }}
+                        {% for error in form.age.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        {{ form.gender_id.label(class="form-label") }}
+                        {{ form.gender_id(class="form-select" + (" is-invalid" if form.gender_id.errors else "")) }}
+                        {% for error in form.gender_id.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        {{ form.size_id.label(class="form-label") }}
+                        {{ form.size_id(class="form-select" + (" is-invalid" if form.size_id.errors else "")) }}
+                        {% for error in form.size_id.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        {{ form.color_id.label(class="form-label") }}
+                        {{ form.color_id(class="form-select" + (" is-invalid" if form.color_id.errors else "")) }}
+                        {% for error in form.color_id.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.hair_length_id.label(class="form-label") }}
+                        {{ form.hair_length_id(class="form-select" + (" is-invalid" if form.hair_length_id.errors else "")) }}
+                        {% for error in form.hair_length_id.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.min_rooms.label(class="form-label") }}
+                        {{ form.min_rooms(class="form-control" + (" is-invalid" if form.min_rooms.errors else "")) }}
+                        {% for error in form.min_rooms.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    {{ form.description.label(class="form-label") }}
+                    {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows=3) }}
+                    {% for error in form.description.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="mb-3">
+                    {{ form.special_needs.label(class="form-label") }}
+                    {{ form.special_needs(class="form-control" + (" is-invalid" if form.special_needs.errors else ""), rows=3) }}
+                    {% for error in form.special_needs.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-check mb-3">
+                            {{ form.is_neutered(class="form-check-input") }}
+                            {{ form.is_neutered.label(class="form-check-label") }}
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-check mb-3">
+                            {{ form.requires_house(class="form-check-input") }}
+                            {{ form.requires_house.label(class="form-check-label") }}
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-check mb-3">
+                            {{ form.for_children(class="form-check-input") }}
+                            {{ form.for_children.label(class="form-check-label") }}
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-check mb-3">
+                            {{ form.with_other_animals(class="form-check-input") }}
+                            {{ form.with_other_animals.label(class="form-check-label") }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-check">
+                        {{ form.is_available(class="form-check-input") }}
+                        {{ form.is_available.label(class="form-check-label") }}
+                    </div>
+                </div>
+
+                <hr>
+
+
+
+                <!-- Загрузка новых фотографий -->
+                <div class="mb-4">
+                    <label for="photos" class="form-label fw-bold">Добавить новые фотографии</label>
+                    <input type="file" class="form-control" id="photos" name="photos" multiple accept="image/*">
+                    <div class="form-text">Можно выбрать несколько файлов. Поддерживаются форматы: JPG, PNG, GIF, WEBP. Первая загруженная фотография станет главной, если нет других.</div>
+                </div>
+                {% if photos is defined %}
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Текущие фотографии</label>
+                    <div class="row" id="current-photos">
+                        {% for photo in photos %}
+                        <div class="col-md-3 mb-3" data-photo-id="{{ photo.id }}">
+                            <div class="card h-100">
+                                <img src="{{ url_for('static', filename=photo.photo_url) }}"
+                                     class="card-img-top"
+                                     alt="Фото"
+                                     style="height: 150px; object-fit: cover;">
+                                <div class="card-body p-2 text-center">
+                                    {% if photo.is_primary %}
+                                        <span class="badge bg-success mb-2 d-block">Главная</span>
+                                    {% else %}
+                                        <!-- Кнопка "Сделать главной" без формы -->
+                                        <button type="button"
+                                                class="btn btn-outline-primary btn-sm mb-1 w-100 set-primary-btn"
+                                                data-photo-id="{{ photo.id }}">
+                                            Сделать главной
+                                        </button>
+                                    {% endif %}
+                                    <!-- Кнопка "Удалить" без формы -->
+                                    <button type="button"
+                                            class="btn btn-outline-danger btn-sm w-100 delete-photo-btn"
+                                            data-photo-id="{{ photo.id }}">
+                                        Удалить
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{{ url_for('admin.manage_animals') }}" class="btn btn-secondary">Отмена</a>
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Скрипт для динамической загрузки пород -->
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const speciesSelect = document.getElementById('species_select');
+    const breedSelect = document.getElementById('breed_select');
+
+    function loadBreeds(speciesId) {
+        if (speciesId && speciesId != 0) {
+            fetch(`/admin/get_breeds/${speciesId}`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
+                .then(breeds => {
+                    breedSelect.innerHTML = '<option value="0">-- Не указана --</option>';
+                    breeds.forEach(breed => {
+                        const option = document.createElement('option');
+                        option.value = breed.id;
+                        option.textContent = breed.name;
+                        breedSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Ошибка загрузки пород:', error);
+                });
+        } else {
+            breedSelect.innerHTML = '<option value="0">-- Сначала выберите вид --</option>';
+        }
+    }
+
+    speciesSelect.addEventListener('change', function() {
+        loadBreeds(this.value);
+    });
+
+    const selectedSpecies = speciesSelect.value;
+    if (selectedSpecies && selectedSpecies != 0) {
+        loadBreeds(selectedSpecies);
+    }
+});
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+
+    async function sendPost(url, photoId) {
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                }
+            });
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('Ошибка при выполнении операции');
+            }
+        } catch (error) {
+            console.error('Ошибка:', error);
+            alert('Произошла ошибка');
+        }
+    }
+
+    document.querySelectorAll('.set-primary-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const photoId = this.dataset.photoId;
+            const url = "{{ url_for('admin.set_primary_photo', photo_id=0) }}".replace('0', photoId);
+            sendPost(url, photoId);
+        });
+    });
+
+    document.querySelectorAll('.delete-photo-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!confirm('Удалить эту фотографию?')) return;
+            const photoId = this.dataset.photoId;
+            const url = "{{ url_for('admin.delete_photo', photo_id=0) }}".replace('0', photoId);
+            sendPost(url, photoId);
+        });
+    });
+});
+</script>
+{% endblock %}

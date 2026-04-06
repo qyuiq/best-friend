@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Пользователь {{ user.username }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('admin.index') }}">Админ-панель</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('admin.manage_users') }}">Пользователи</a></li>
+            <li class="breadcrumb-item active">{{ user.username }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Информация об аккаунте</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>ID:</strong> {{ user.id }}</p>
+                    <p><strong>Логин:</strong> {{ user.username }}</p>
+                    <p><strong>Роль:</strong>
+                        {% if user.is_admin() %}
+                            <span class="badge bg-danger">Администратор</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Пользователь</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>Дата регистрации:</strong> {{ user.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                    <p><strong>Последнее обновление:</strong> {{ user.updated_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Анкета усыновителя</h5>
+                </div>
+                <div class="card-body">
+                    {% if user.profile %}
+                        <p><strong>ФИО:</strong> {{ user.profile.last_name }} {{ user.profile.first_name }} {{ user.profile.patronymic or '' }}</p>
+                        <p><strong>Email:</strong> {{ user.profile.email }}</p>
+                        <p><strong>Телефон:</strong> {{ user.profile.phone }}</p>
+                        <p><strong>Адрес:</strong> {{ user.profile.address }}</p>
+                        <p><strong>Тип жилья:</strong> {{ 'Частный дом' if user.profile.housing_type == 'house' else 'Квартира' }}</p>
+                        <p><strong>Комнат:</strong> {{ user.profile.rooms_count }}</p>
+                        <p><strong>Дети:</strong> {{ 'Есть' if user.profile.has_children else 'Нет' }}</p>
+                        <p><strong>Другие животные:</strong> {{ 'Есть' if user.profile.has_other_animals else 'Нет' }}</p>
+                        {% if user.profile.previous_experience %}
+                            <p><strong>Предыдущий опыт:</strong> {{ user.profile.previous_experience }}</p>
+                        {% endif %}
+                        {% if user.profile.animal_care_experience %}
+                            <p><strong>Опыт ухода:</strong> {{ user.profile.animal_care_experience }}</p>
+                        {% endif %}
+                        <p><strong>Анкета заполнена:</strong> {{ user.profile.created_at.strftime('%d.%m.%Y') }}</p>
+                        <p><strong>Последнее обновление:</strong> {{ user.profile.updated_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                    {% else %}
+                        <p class="text-muted">Анкета не заполнена</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5>История заявок на усыновление</h5>
+        </div>
+        <div class="card-body">
+            {% if user.queue_applications %}
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Животное</th>
+                            <th>Позиция</th>
+                            <th>Статус</th>
+                            <th>Дата подачи</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for app in user.queue_applications %}
+                        <tr>
+                            <td>{{ app.id }}</td>
+                            <td>
+                                <a href="{{ url_for('animals.animal_detail', animal_id=app.animal.id) }}">
+                                    {{ app.animal.name }}
+                                </a>
+                            </td>
+                            <td>{{ app.queue_position }}</td>
+                            <td>
+                                {% if app.status == 'active' %}
+                                    <span class="badge bg-warning text-dark">Активна</span>
+                                {% elif app.status == 'approved' %}
+                                    <span class="badge bg-success">Одобрена</span>
+                                {% elif app.status == 'cancelled' %}
+                                    <span class="badge bg-danger">Отменена</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ app.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <p class="text-muted">Пользователь не подавал заявок</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
