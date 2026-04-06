@@ -37,13 +37,6 @@ def create_app():
         "version": "1.0.0",
         "description": "API для сервиса усыновления животных",
         "termsOfService": "",
-        "contact": {
-            "name": "Support",
-            "url": "https://example.com",
-        },
-        "license": {
-            "name": "MIT",
-        },
         "definitions": {
             "Animal": {
                 "type": "object",
