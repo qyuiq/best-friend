@@ -48,6 +48,125 @@ def manage_animals():
     animals = Animal.query.order_by(Animal.created_at.desc()).paginate(page=page, per_page=20)
     return render_template('admin/animals.html', animals=animals)
 
+@admin_bp.route('/queue')
+@admin_required
+def manage_queue():
+    """
+    Получить список активных заявок на усыновление
+    ---
+    tags:
+      - dictionaries
+    responses:
+      200:
+        description: Успешный ответ (JSON или HTML)
+        schema:
+          type: array
+          items:
+            $ref: '#/definitions/AdoptionQueue'
+      403:
+        description: Доступ запрещён (не админ)
+    security:
+      - cookieAuth: []
+    """
+    applications = AdoptionQueue.query.filter_by(status='active').order_by(
+        AdoptionQueue.animal_id, AdoptionQueue.queue_position
+    ).all()
+
+    # Если клиент хочет JSON
+    if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+        data = []
+        for app in applications:
+            data.append({
+                'id': app.id,
+                'user_id': app.user_id,
+                'username': app.user.username,
+                'animal_id': app.animal_id,
+                'animal_name': app.animal.name,
+                'queue_position': app.queue_position,
+                'status': app.status,
+                'created_at': app.created_at.isoformat() if app.created_at else None
+            })
+        return jsonify(data)
+
+    # Иначе HTML
+    return render_template('admin/queue.html', applications=applications)
+
+
+@admin_bp.route('/queue/approve/<int:queue_id>', methods=['POST'])
+@admin_required
+def approve_application(queue_id):
+    """
+    Одобрить заявку на усыновление (POST)
+    ---
+    tags:
+      - admin (actions)
+    parameters:
+      - name: queue_id
+        in: path
+        type: integer
+        required: true
+        description: ID заявки
+    responses:
+      302:
+        description: Редирект на страницу управления очередью
+      401:
+        description: Пользователь не авторизован
+      403:
+        description: Доступ запрещён (не админ)
+      404:
+        description: Заявка не найдена
+    security:
+      - cookieAuth: []
+    """
+    app = AdoptionQueue.query.get_or_404(queue_id)
+    if app.status == 'active':
+        app.status = 'approved'
+        # Можно также отметить животное как недоступное
+        animal = Animal.query.get(app.animal_id)
+        animal.is_available = False
+        db.session.commit()
+        flash(f'Заявка пользователя {app.user.username} на {app.animal.name} одобрена', 'success')
+    else:
+        flash('Заявка уже обработана', 'warning')
+    return redirect(url_for('admin.manage_queue'))
+
+
+@admin_bp.route('/queue/reject/<int:queue_id>', methods=['POST'])
+@admin_required
+def reject_application(queue_id):
+    """
+    Отклонить заявку на усыновление (POST)
+    ---
+    tags:
+      - admin (actions)
+    parameters:
+      - name: queue_id
+        in: path
+        type: integer
+        required: true
+        description: ID заявки
+    responses:
+      302:
+        description: Редирект на страницу управления очередью
+      401:
+        description: Пользователь не авторизован
+      403:
+        description: Доступ запрещён (не админ)
+      404:
+        description: Заявка не найдена
+    security:
+      - cookieAuth: []
+    """
+    app = AdoptionQueue.query.get_or_404(queue_id)
+    if app.status == 'active':
+        app.status = 'cancelled'
+        db.session.commit()
+        flash(f'Заявка пользователя {app.user.username} на {app.animal.name} отклонена', 'success')
+    else:
+        flash('Заявка уже обработана', 'warning')
+    return redirect(url_for('admin.manage_queue'))
+
+
 @admin_bp.route('/users')
 @admin_required
 def manage_users():

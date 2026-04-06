@@ -26,6 +26,15 @@
                 </div>
             </div>
         </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Активные заявки</h5>
+                    <p class="card-text display-6">{{ active_applications }}</p>
+                    <a href="{{ url_for('admin.manage_queue') }}" class="btn btn-light btn-sm">Управлять</a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
