@@ -282,22 +282,39 @@ def add_animal():
 
     # Устанавливаем начальные значения для поля breed_id (при GET и перед валидацией POST)
     if request.method == 'GET':
-        # При открытии формы показываем заглушку
         form.breed_id.choices = [(0, '-- Сначала выберите вид --')]
     elif request.method == 'POST':
-        # Если в POST-запросе указан вид, загружаем соответствующие породы
         if form.species_id.data and form.species_id.data != 0:
             breeds = Breed.query.filter_by(species_id=form.species_id.data).order_by(Breed.name).all()
             if breeds:
                 form.breed_id.choices = [(b.id, b.name) for b in breeds]
                 form.breed_id.choices.insert(0, (0, '-- Не указана --'))
             else:
-                form.breed_id.choices = [(0, '-- Не указана --')]  # если пород нет
+                form.breed_id.choices = [(0, '-- Не указана --')]
         else:
-            # Вид не выбран – породы недоступны
             form.breed_id.choices = [(0, '-- Сначала выберите вид --')]
 
     if form.validate_on_submit():
+        # ========== ВАЛИДАЦИЯ ФАЙЛОВ ==========
+        uploaded_files = request.files.getlist('photos')
+        valid_files = []
+        invalid_files = []
+
+        for file in uploaded_files:
+            if file and file.filename:
+                if allowed_file(file.filename):
+                    valid_files.append(file)
+                else:
+                    invalid_files.append(file.filename)
+
+        # Если загружены файлы, но ни одного допустимого – не создаём животное
+        if uploaded_files and not valid_files:
+            for fname in invalid_files:
+                flash(f'Файл "{fname}" имеет недопустимое расширение. Разрешены: png, jpg, jpeg, gif, webp', 'danger')
+            # Возвращаем форму с уже введёнными данными (кроме файлов)
+            return render_template('admin/animal_form.html', form=form, title='Добавить животное')
+
+        # Создаём животное
         animal = Animal()
         form.populate_obj(animal)
 
@@ -309,15 +326,19 @@ def add_animal():
         db.session.add(animal)
         db.session.flush()
 
-        uploaded_files = request.files.getlist('photos')
-        if uploaded_files and uploaded_files[0].filename:
-            photo_paths = save_uploaded_files(uploaded_files, animal.id)
+        # Сохраняем только допустимые файлы
+        if valid_files:
+            photo_paths = save_uploaded_files(valid_files, animal.id)
             for i, path in enumerate(photo_paths):
                 db.session.add(AnimalPhoto(
                     animal_id=animal.id,
                     photo_url=path,
                     is_primary=(i == 0)
                 ))
+
+        # Если были недопустимые файлы, но также были и допустимые – показываем предупреждение
+        if invalid_files:
+            flash(f'Некоторые файлы не были добавлены: {", ".join(invalid_files)}. Разрешены только изображения.', 'warning')
 
         db.session.commit()
         flash(f'Животное {animal.name} добавлено', 'success')
@@ -326,28 +347,46 @@ def add_animal():
     return render_template('admin/animal_form.html', form=form, title='Добавить животное')
 
 
-@admin_bp.route('/animals/edit/<int:animal_id>', methods=['GET', 'POST'])  # маршрут для редактирования животного
-@admin_required  # проверка прав администратора
+@admin_bp.route('/animals/edit/<int:animal_id>', methods=['GET', 'POST'])
+@admin_required
 def edit_animal(animal_id):
-    animal = Animal.query.get_or_404(animal_id)  # получаем животное по id или 404
-    form = AnimalForm(obj=animal)  # создаем форму, заполненную данными животного
+    animal = Animal.query.get_or_404(animal_id)
+    form = AnimalForm(obj=animal)
 
     # Заполняем список пород в зависимости от текущего вида
-    if animal.species_id:  # если у животного указан вид
-        # получаем все породы этого вида
+    if animal.species_id:
         breeds = Breed.query.filter_by(species_id=animal.species_id).order_by(Breed.name).all()
-        form.breed_id.choices = [(b.id, b.name) for b in breeds]  # формируем список выбора
-        form.breed_id.choices.insert(0, (0, '-- Не указана --'))  # добавляем пустой вариант
+        form.breed_id.choices = [(b.id, b.name) for b in breeds]
+        form.breed_id.choices.insert(0, (0, '-- Не указана --'))
     else:
-        # если вид не выбран, породы недоступны
         form.breed_id.choices = [(0, '-- Сначала выберите вид --')]
 
-    if form.validate_on_submit():  # если форма отправлена и прошла валидацию
-        form.populate_obj(animal)  # обновляем поля животного данными из формы
+    if form.validate_on_submit():
+        # ========== ВАЛИДАЦИЯ ФАЙЛОВ ==========
+        uploaded_files = request.files.getlist('photos')
+        valid_files = []
+        invalid_files = []
 
-        # Аналогичная обработка нулевых значений
-        if form.species_id.data == 0:  # если вид не выбран
-            animal.species_id = None  # сбрасываем внешний ключ в NULL
+        for file in uploaded_files:
+            if file and file.filename:
+                if allowed_file(file.filename):
+                    valid_files.append(file)
+                else:
+                    invalid_files.append(file.filename)
+
+        # Если загружены файлы, но ни одного допустимого – не добавляем фото, но обновляем остальные поля
+        # (пользователь мог изменить другие данные)
+        if uploaded_files and not valid_files:
+            for fname in invalid_files:
+                flash(f'Файл "{fname}" имеет недопустимое расширение. Разрешены: png, jpg, jpeg, gif, webp', 'danger')
+            # Не прерываем обновление, но фото не добавляем
+
+        # Обновляем поля животного
+        form.populate_obj(animal)
+
+        # Обработка нулевых значений
+        if form.species_id.data == 0:
+            animal.species_id = None
         if form.breed_id.data == 0:
             animal.breed_id = None
         if form.gender_id.data == 0:
@@ -359,30 +398,27 @@ def edit_animal(animal_id):
         if form.hair_length_id.data == 0:
             animal.hair_length_id = None
 
-        # Обработка загруженных фотографий
-        uploaded_files = request.files.getlist('photos')  # получаем список новых фото
-        if uploaded_files and uploaded_files[0].filename:  # если файлы загружены
-            photo_paths = save_uploaded_files(uploaded_files, animal.id)  # сохраняем на диск
-            # Определяем, нужно ли установить первую как главную, если нет ни одной главной
+        # Сохраняем только допустимые файлы
+        if valid_files:
+            photo_paths = save_uploaded_files(valid_files, animal.id)
             has_primary = AnimalPhoto.query.filter_by(animal_id=animal.id, is_primary=True).first()
-            for i, path in enumerate(photo_paths):  # перебираем сохраненные фото
-                photo = AnimalPhoto(
+            for i, path in enumerate(photo_paths):
+                db.session.add(AnimalPhoto(
                     animal_id=animal.id,
                     photo_url=path,
-                    is_primary=(not has_primary and i == 0)  # если нет главной, первая становится главной
-                )
-                db.session.add(photo)  # добавляем фото в сессию
+                    is_primary=(not has_primary and i == 0)
+                ))
 
-        db.session.commit()  # сохраняем изменения в БД
-        flash(f'Животное {animal.name} обновлено', 'success')  # сообщение об успехе
-        return redirect(url_for('admin.manage_animals'))  # перенаправление в список
+        # Если были недопустимые файлы, но также были и допустимые – показываем предупреждение
+        if invalid_files and valid_files:
+            flash(f'Некоторые файлы не были добавлены: {", ".join(invalid_files)}. Разрешены только изображения.', 'warning')
 
-    # Получаем все фотографии животного для отображения в форме
-    photos = AnimalPhoto.query.filter_by(animal_id=animal.id).order_by(
-        AnimalPhoto.is_primary.desc(), AnimalPhoto.id).all()
+        db.session.commit()
+        flash(f'Животное {animal.name} обновлено', 'success')
+        return redirect(url_for('admin.manage_animals'))
 
-    return render_template('admin/animal_form.html', form=form, title='Редактировать животное', animal=animal,
-                           photos=photos)  # рендерим шаблон с формой и списком фото
+    photos = AnimalPhoto.query.filter_by(animal_id=animal.id).order_by(AnimalPhoto.is_primary.desc(), AnimalPhoto.id).all()
+    return render_template('admin/animal_form.html', form=form, title='Редактировать животное', animal=animal, photos=photos)
 
 @admin_bp.route('/animals/hide/<int:animal_id>', methods=['POST'], endpoint='hide_animal')
 @admin_required
