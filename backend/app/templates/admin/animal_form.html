@@ -21,6 +21,13 @@
 
             <form method="POST" action="" enctype="multipart/form-data">
                 {{ form.hidden_tag() }}
+                <!-- Скрытое поле для хранения текущей породы при редактировании -->
+                {% if animal is defined and animal %}
+                    <input type="hidden" id="current_breed_id" value="{{ animal.breed_id if animal.breed_id else 0 }}">
+                {% else %}
+                    <input type="hidden" id="current_breed_id" value="0">
+                {% endif %}
+
 
                 <!-- Основная информация -->
                 <div class="row">
@@ -209,8 +216,10 @@
 document.addEventListener('DOMContentLoaded', function() {
     const speciesSelect = document.getElementById('species_select');
     const breedSelect = document.getElementById('breed_select');
+    const currentBreedIdElem = document.getElementById('current_breed_id');
+    const currentBreedId = currentBreedIdElem ? currentBreedIdElem.value : '0';
 
-    function loadBreeds(speciesId) {
+    function loadBreeds(speciesId, callback) {
         if (speciesId && speciesId != 0) {
             fetch(`/admin/get_breeds/${speciesId}`)
                 .then(response => {
@@ -225,16 +234,26 @@ document.addEventListener('DOMContentLoaded', function() {
                         option.textContent = breed.name;
                         breedSelect.appendChild(option);
                     });
+                    // Восстанавливаем текущее значение породы, если оно есть и существует в новом списке
+                    if (currentBreedId && currentBreedId != '0') {
+                        if (breedSelect.querySelector(`option[value="${currentBreedId}"]`)) {
+                            breedSelect.value = currentBreedId;
+                        }
+                    }
+                    if (callback) callback();
                 })
                 .catch(error => {
                     console.error('Ошибка загрузки пород:', error);
+                    if (callback) callback();
                 });
         } else {
             breedSelect.innerHTML = '<option value="0">-- Сначала выберите вид --</option>';
+            if (callback) callback();
         }
     }
 
     speciesSelect.addEventListener('change', function() {
+        // При изменении вида сбрасываем запомненное значение, так как пользователь выбрал новый вид
         loadBreeds(this.value);
     });
 
