@@ -137,6 +137,33 @@ def test_decision_table_rule4_already_in_queue():
     assert success is False
     assert 'уже в очереди' in errors[0].lower()
 
+def test_decision_table_rule5_active_count_limit():
+    """
+    DECISION TABLE RULE 5: Превышен лимит активных заявок (>=3).
+    Класс: active_count = 3, остальные условия проходные.
+    Ожидаем: success=False, ошибка о лимите.
+    """
+    animal = Mock()
+    animal.is_available = True
+    animal.requires_house = False
+    animal.min_rooms = 1
+    animal.for_children = True
+    animal.with_other_animals = True
+
+    profile = Mock()
+    profile.housing_type = 'apartment'
+    profile.rooms_count = 2
+    profile.has_children = False
+    profile.has_other_animals = False
+
+    success, errors = validate_queue_eligibility(
+        animal=animal,
+        profile=profile,
+        active_count=3,
+        existing_entry=None,
+    )
+    assert success is False
+    assert any(keyword in errors[0].lower() for keyword in ['3', 'более', 'лимит'])
 
 def test_decision_table_rule6_house_required():
     """
@@ -168,6 +195,90 @@ def test_decision_table_rule6_house_required():
     )
     assert success is False
     assert 'частный дом' in errors[0].lower()
+
+def test_decision_table_rule7_rooms_insufficient():
+    """
+    DECISION TABLE RULE 7: Количество комнат меньше требуемого.
+    Класс: animal.min_rooms=3, profile.rooms_count=2, остальные условия проходные.
+    Ожидаем: success=False, ошибка о комнатах.
+    """
+    animal = Mock()
+    animal.is_available = True
+    animal.requires_house = False
+    animal.min_rooms = 3
+    animal.for_children = True
+    animal.with_other_animals = True
+
+    profile = Mock()
+    profile.housing_type = 'apartment'
+    profile.rooms_count = 2
+    profile.has_children = False
+    profile.has_other_animals = False
+
+    success, errors = validate_queue_eligibility(
+        animal=animal,
+        profile=profile,
+        active_count=0,
+        existing_entry=None,
+    )
+    assert success is False
+    assert 'комнат' in errors[0].lower()
+
+def test_decision_table_rule8_not_for_children():
+    """
+    DECISION TABLE RULE 8: Животное не для детей, у пользователя есть дети.
+    Класс: animal.for_children=False, profile.has_children=True.
+    Ожидаем: success=False, ошибка о детях.
+    """
+    animal = Mock()
+    animal.is_available = True
+    animal.requires_house = False
+    animal.min_rooms = 1
+    animal.for_children = False
+    animal.with_other_animals = True
+
+    profile = Mock()
+    profile.housing_type = 'apartment'
+    profile.rooms_count = 2
+    profile.has_children = True
+    profile.has_other_animals = False
+
+    success, errors = validate_queue_eligibility(
+        animal=animal,
+        profile=profile,
+        active_count=0,
+        existing_entry=None,
+    )
+    assert success is False
+    assert any(keyword in errors[0].lower() for keyword in ['дет', 'семей'])
+
+def test_decision_table_rule9_not_with_other_animals():
+    """
+    DECISION TABLE RULE 9: Животное не уживается с другими, у пользователя есть другие животные.
+    Класс: animal.with_other_animals=False, profile.has_other_animals=True.
+    Ожидаем: success=False, ошибка о других животных.
+    """
+    animal = Mock()
+    animal.is_available = True
+    animal.requires_house = False
+    animal.min_rooms = 1
+    animal.for_children = True
+    animal.with_other_animals = False
+
+    profile = Mock()
+    profile.housing_type = 'apartment'
+    profile.rooms_count = 2
+    profile.has_children = False
+    profile.has_other_animals = True
+
+    success, errors = validate_queue_eligibility(
+        animal=animal,
+        profile=profile,
+        active_count=0,
+        existing_entry=None,
+    )
+    assert success is False
+    assert 'другими животными' in errors[0].lower()
 
 
 # =============================================================================
