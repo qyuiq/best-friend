@@ -158,7 +158,7 @@ class Animal(db.Model):
     # Связи
     photos = db.relationship('AnimalPhoto', backref='animal', lazy=True, cascade='all, delete-orphan')
     queue_applications = db.relationship('AdoptionQueue', backref='animal', lazy=True, cascade='all, delete-orphan')
-    edit_logs = db.relationship('AnimalEditLog', backref='animal', lazy=True, cascade='all, delete-orphan')
+    edit_logs = db.relationship('AnimalEditLog', backref='animal', lazy=True)
 
     def get_age_display(self):
         """Возвращает возраст в удобочитаемом формате"""
@@ -231,7 +231,7 @@ class AnimalEditLog(db.Model):
     __tablename__ = 'animal_edit_log'
 
     id = db.Column(db.Integer, primary_key=True)
-    animal_id = db.Column(db.Integer, db.ForeignKey('animals.id'), nullable=False)
+    animal_id = db.Column(db.Integer, db.ForeignKey('animals.id', ondelete='SET NULL'), nullable=True)
     admin_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     action = db.Column(db.String(20), nullable=False)  # created, updated, archived
     field_name = db.Column(db.String(50))

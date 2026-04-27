@@ -574,6 +574,18 @@ def delete_animal(animal_id):
       - cookieAuth: []
     """
     animal = Animal.query.get_or_404(animal_id)
+    animal_name = animal.name
+
+    log_entry = AnimalEditLog(
+        animal_id=animal.id,
+        admin_id=current_user.id,
+        action='deleted',
+        field_name='all',
+        old_value=f"Animal: {animal.name}, Species ID: {animal.species_id}",
+        new_value = None
+    )
+    db.session.add(log_entry)
+    db.session.flush()
 
     # Удаляем физические файлы фотографий
     for photo in animal.photos:
@@ -584,7 +596,7 @@ def delete_animal(animal_id):
     db.session.delete(animal)
     db.session.commit()
 
-    flash(f'Животное {animal.name} и все связанные данные удалены', 'success')
+    flash(f'Животное {animal_name} удалено. Запись об удалении сохранена в журнале аудита.', 'success')
     return redirect(url_for('admin.manage_animals'))
 
 @admin_bp.route('/photo/set_primary/<int:photo_id>', methods=['POST'], endpoint='set_primary_photo')
