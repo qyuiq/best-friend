@@ -110,6 +110,28 @@ def animal_detail(animal_id):
 @animals_bp.route('/<int:animal_id>/join', methods=['POST'])  # маршрут для вступления в очередь
 @login_required  # требует авторизации пользователя
 def join_queue(animal_id):
+    """
+        Вступление авторизованного пользователя в очередь на усыновление питомца
+        ---
+        tags:
+          - animals
+        parameters:
+          - name: animal_id
+            in: path
+            type: integer
+            required: true
+            description: Уникальный идентификатор (ID) питомца в базе данных
+        responses:
+          302:
+            description: >
+              Успешная обработка запроса. Происходит перенаправление (редирект)
+              обратно на детальную страницу питомца /animals/<animal_id>. В сессию записывается
+              flash-сообщение (успех вступления в очередь, либо ошибка проверки условий проживания).
+          401:
+            description: Пользователь не авторизован в системе (необходима сессия авторизации)
+          404:
+            description: Питомец с указанным ID не найден в приюте
+        """
     animal = Animal.query.get_or_404(animal_id)  # получаем животное по id или 404
 
     # Проверка доступности животного
@@ -123,12 +145,14 @@ def join_queue(animal_id):
         flash('Сначала заполните анкету в личном кабинете', 'warning')
         return redirect(url_for('auth.profile'))  # отправляем на заполнение анкеты
 
-    # Проверка, что пользователь уже не в очереди на это животное
-    existing_entry = AdoptionQueue.query.filter_by(
+    # РЕШЕНИЕ INTEGRITY ERROR: Ищем в БД запись для данной пары (user, animal) с ЛЮБЫМ статусом
+    any_existing_entry = AdoptionQueue.query.filter_by(
         user_id=current_user.id,
-        animal_id=animal_id,
-        status='active'
-    ).first()  # ищем активную заявку на это животное
+        animal_id=animal_id
+    ).first()
+
+    # Извлекаем активную запись для передачи в функцию валидации (если она активна)
+    existing_active_entry = any_existing_entry if (any_existing_entry and any_existing_entry.status == 'active') else None
 
     # Подсчёт количества активных заявок пользователя
     active_applications = AdoptionQueue.query.filter_by(
@@ -141,7 +165,7 @@ def join_queue(animal_id):
         animal=animal,
         profile=profile,
         active_count=active_applications,
-        existing_entry=existing_entry,
+        existing_entry=existing_active_entry,  # теперь передаем только действительно активную запись
         max_active=Config.MAX_ACTIVE_APPLICATIONS,  # максимальное количество заявок (из конфига)
     )
 
@@ -159,7 +183,7 @@ def join_queue(animal_id):
                 flash(f'• {error}', 'danger')  # выводим каждую ошибку списком
         return redirect(url_for('animals.animal_detail', animal_id=animal_id))  # обратно на страницу
 
-    # Определяем следующую позицию в очереди
+    # Определяем следующую позицию в очереди для активных заявок
     last_in_queue = AdoptionQueue.query.filter_by(
         animal_id=animal_id,
         status='active'
@@ -167,20 +191,28 @@ def join_queue(animal_id):
 
     next_position = last_in_queue.queue_position + 1 if last_in_queue else 1  # следующая позиция
 
-    # Создаем запись в очереди
-    queue_entry = AdoptionQueue(
-        user_id=current_user.id,
-        animal_id=animal_id,
-        queue_position=next_position,
-        status='active'
-    )
+    # Сохраняем состояние (UPSERT - Update или Insert)
+    if any_existing_entry:
+        # Если запись уже существовала в базе ранее — просто переводим её в активное состояние на новую позицию
+        any_existing_entry.queue_position = next_position
+        any_existing_entry.status = 'active'
+        # Также обновляем временные метки, чтобы в истории отображалось актуальное время вступления
+        any_existing_entry.updated_at = db.func.current_timestamp()
+    else:
+        # Если пользователь вступает в очередь на этого питомца впервые в истории
+        queue_entry = AdoptionQueue(
+            user_id=current_user.id,
+            animal_id=animal_id,
+            queue_position=next_position,
+            status='active'
+        )
+        db.session.add(queue_entry)  # добавляем новую запись в сессию
 
-    db.session.add(queue_entry)  # добавляем в сессию
-    db.session.commit()  # сохраняем в БД
+    # Фиксируем все сделанные изменения в базе данных
+    db.session.commit()
 
     flash(f'Вы успешно встали в очередь на {animal.name}! Ваша позиция: {next_position}', 'success')
     return redirect(url_for('animals.animal_detail', animal_id=animal_id))  # возвращаем на страницу животного
-
 
 @animals_bp.route('/cancel_queue/<int:queue_id>', methods=['POST'])
 @login_required
